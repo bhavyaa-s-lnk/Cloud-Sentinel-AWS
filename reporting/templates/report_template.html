@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudSentinel AWS Security Audit Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --bg-card: rgba(18, 24, 38, 0.75);
+            --bg-card-hover: rgba(26, 34, 52, 0.9);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(56, 189, 248, 0.2);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --cyan-accent: #38bdf8;
+            --cyan-glow: rgba(56, 189, 248, 0.4);
+            --sev-critical: #ef4444;
+            --sev-critical-bg: rgba(239, 68, 68, 0.12);
+            --sev-high: #f97316;
+            --sev-high-bg: rgba(249, 115, 22, 0.12);
+            --sev-medium: #eab308;
+            --sev-medium-bg: rgba(234, 179, 8, 0.12);
+            --sev-low: #3b82f6;
+            --sev-low-bg: rgba(59, 130, 246, 0.12);
+            --sev-info: #64748b;
+            --sev-info-bg: rgba(100, 116, 139, 0.12);
+            --code-bg: #050810;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2.5rem 1.5rem;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 85% 75%, rgba(168, 85, 247, 0.04) 0%, transparent 45%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.35);
+        }
+
+        .brand-logo svg {
+            width: 26px;
+            height: 26px;
+            fill: #ffffff;
+        }
+
+        .brand-title h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.875rem;
+            color: var(--cyan-accent);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .meta-badges {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .meta-badge strong {
+            color: #ffffff;
+        }
+
+        /* Summary Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-glow);
+        }
+
+        .kpi-card .kpi-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-card .kpi-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .kpi-card.score .kpi-value {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .kpi-card.score.risk-high .kpi-value {
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .kpi-card.critical .kpi-value { color: var(--sev-critical); }
+        .kpi-card.high .kpi-value { color: var(--sev-high); }
+        .kpi-card.medium .kpi-value { color: var(--sev-medium); }
+        .kpi-card.low .kpi-value { color: var(--sev-low); }
+
+        /* Filter Controls */
+        .controls-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: #050810;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.65rem 1rem 0.65rem 2.4rem;
+            color: #ffffff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--cyan-accent);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            fill: var(--text-muted);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.45rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .filter-btn.active {
+            background: var(--cyan-accent);
+            border-color: var(--cyan-accent);
+            color: #050810;
+            font-weight: 600;
+            box-shadow: 0 0 12px var(--cyan-glow);
+        }
+
+        /* Findings List */
+        .findings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .finding-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--sev-info);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .finding-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-glow);
+        }
+
+        .finding-card.severity-CRITICAL { border-left-color: var(--sev-critical); }
+        .finding-card.severity-HIGH { border-left-color: var(--sev-high); }
+        .finding-card.severity-MEDIUM { border-left-color: var(--sev-medium); }
+        .finding-card.severity-LOW { border-left-color: var(--sev-low); }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .finding-title-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .badge-severity {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-severity.CRITICAL { background: var(--sev-critical-bg); color: var(--sev-critical); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-severity.HIGH { background: var(--sev-high-bg); color: var(--sev-high); border: 1px solid rgba(249, 115, 22, 0.3); }
+        .badge-severity.MEDIUM { background: var(--sev-medium-bg); color: var(--sev-medium); border: 1px solid rgba(234, 179, 8, 0.3); }
+        .badge-severity.LOW { background: var(--sev-low-bg); color: var(--sev-low); border: 1px solid rgba(59, 130, 246, 0.3); }
+
+        .badge-service {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--cyan-accent);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+        }
+
+        .finding-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .finding-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .resource-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #050810;
+            border: 1px solid var(--border-color);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #cbd5e1;
+            margin-bottom: 0.85rem;
+        }
+
+        .finding-desc {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            line-height: 1.6;
+        }
+
+        /* Remediation Box */
+        .remediation-box {
+            background: #050810;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            position: relative;
+        }
+
+        .remediation-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--cyan-accent);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .remediation-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .benchmark-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: 0.85rem;
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        .benchmark-tag svg {
+            width: 14px;
+            height: 14px;
+            fill: #64748b;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 1.5rem 1rem; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .controls-card { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="brand-section">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                    </svg>
+                </div>
+                <div class="brand-title">
+                    <h1>CloudSentinel</h1>
+                    <p>AWS Automated Security Posture Audit</p>
+                </div>
+            </div>
+
+            <div class="meta-badges">
+                <div class="meta-badge">
+                    <span>Region:</span>
+                    <strong>{{ metadata.region }}</strong>
+                </div>
+                <div class="meta-badge">
+                    <span>Profile:</span>
+                    <strong>{{ metadata.profile }}</strong>
+                </div>
+                <div class="meta-badge">
+                    <span>Generated:</span>
+                    <strong>{{ metadata.scan_date }}</strong>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Summary Cards -->
+        <section class="dashboard-grid">
+            <div class="kpi-card score {{ 'risk-high' if summary.security_score < 70 else '' }}">
+                <div class="kpi-label">Security Posture Score</div>
+                <div class="kpi-value">{{ summary.security_score }}<span style="font-size: 1.25rem;">/100</span></div>
+            </div>
+            <div class="kpi-card critical">
+                <div class="kpi-label">Critical Findings</div>
+                <div class="kpi-value">{{ summary.critical_count }}</div>
+            </div>
+            <div class="kpi-card high">
+                <div class="kpi-label">High Severity</div>
+                <div class="kpi-value">{{ summary.high_count }}</div>
+            </div>
+            <div class="kpi-card medium">
+                <div class="kpi-label">Medium Severity</div>
+                <div class="kpi-value">{{ summary.medium_count }}</div>
+            </div>
+            <div class="kpi-card low">
+                <div class="kpi-label">Low Severity</div>
+                <div class="kpi-value">{{ summary.low_count }}</div>
+            </div>
+        </section>
+
+        <!-- Interactive Filter Controls -->
+        <section class="controls-card">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="searchInput" placeholder="Search findings by resource, title, or service...">
+            </div>
+
+            <div class="filter-group" id="severityFilters">
+                <button class="filter-btn active" data-severity="ALL">All Severities</button>
+                <button class="filter-btn" data-severity="CRITICAL">Critical ({{ summary.critical_count }})</button>
+                <button class="filter-btn" data-severity="HIGH">High ({{ summary.high_count }})</button>
+                <button class="filter-btn" data-severity="MEDIUM">Medium ({{ summary.medium_count }})</button>
+                <button class="filter-btn" data-severity="LOW">Low ({{ summary.low_count }})</button>
+            </div>
+
+            <div class="filter-group" id="serviceFilters">
+                <button class="filter-btn active" data-service="ALL">All Services</button>
+                {% for svc, cnt in summary.service_breakdown.items() %}
+                <button class="filter-btn" data-service="{{ svc }}">{{ svc }} ({{ cnt }})</button>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Findings List -->
+        <main class="findings-list" id="findingsContainer">
+            {% for finding in findings %}
+            <article class="finding-card severity-{{ finding.severity }}" 
+                     data-severity="{{ finding.severity }}" 
+                     data-service="{{ finding.service }}"
+                     data-search="{{ finding.title }} {{ finding.resource_id }} {{ finding.service }} {{ finding.description }}">
+                <div class="finding-header">
+                    <div class="finding-title-area">
+                        <span class="badge-severity {{ finding.severity }}">{{ finding.severity }}</span>
+                        <span class="badge-service">{{ finding.service }}</span>
+                        <span class="finding-id">{{ finding.finding_id }}</span>
+                    </div>
+                </div>
+
+                <h2 class="finding-title">{{ finding.title }}</h2>
+
+                <div>
+                    <span class="resource-tag">
+                        <span>Resource:</span> {{ finding.resource_id }}
+                    </span>
+                </div>
+
+                <p class="finding-desc">{{ finding.description }}</p>
+
+                <div class="remediation-box">
+                    <div class="remediation-header">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                        </svg>
+                        Remediation Guidance
+                    </div>
+                    <div class="remediation-code">{{ finding.remediation }}</div>
+                </div>
+
+                <div class="benchmark-tag">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <span>Benchmark: {{ finding.compliance_benchmark }}</span>
+                </div>
+            </article>
+            {% endfor %}
+
+            <div id="noResults" class="empty-state" style="display: none;">
+                <h3>No findings match your filter criteria.</h3>
+                <p>Try clearing your search query or selecting "All Severities".</p>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div>CloudSentinel &bull; Automated AWS Security Assessment Engine</div>
+            <div>Scanned Services: {{ metadata.services }} &bull; Target Region: {{ metadata.region }}</div>
+        </footer>
+    </div>
+
+    <!-- Client-side Interactive Filter Script -->
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const severityButtons = document.querySelectorAll('#severityFilters .filter-btn');
+        const serviceButtons = document.querySelectorAll('#serviceFilters .filter-btn');
+        const cards = document.querySelectorAll('.finding-card');
+        const noResults = document.getElementById('noResults');
+
+        let currentSeverity = 'ALL';
+        let currentService = 'ALL';
+        let currentQuery = '';
+
+        function applyFilters() {
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const cardSeverity = card.getAttribute('data-severity');
+                const cardService = card.getAttribute('data-service');
+                const searchText = (card.getAttribute('data-search') || '').toLowerCase();
+
+                const matchesSeverity = (currentSeverity === 'ALL' || cardSeverity === currentSeverity);
+                const matchesService = (currentService === 'ALL' || cardService === currentService);
+                const matchesSearch = (!currentQuery || searchText.includes(currentQuery));
+
+                if (matchesSeverity && matchesService && matchesSearch) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            noResults.style.display = (visibleCount === 0) ? 'block' : 'none';
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            currentQuery = e.target.value.trim().toLowerCase();
+            applyFilters();
+        });
+
+        severityButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                severityButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentSeverity = btn.getAttribute('data-severity');
+                applyFilters();
+            });
+        });
+
+        serviceButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                serviceButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentService = btn.getAttribute('data-service');
+                applyFilters();
+            });
+        });
+    </script>
+</body>
+</html>
